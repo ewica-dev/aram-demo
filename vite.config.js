@@ -3,6 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  base: '/aram-demo/',
   plugins: [
     vue(),
     VitePWA({
@@ -16,6 +17,5 @@ export default defineConfig({
         icons: [] 
       }
     })
-  ],
-  base: '/aram-demo/',
+  ]
 })
