@@ -10,15 +10,26 @@ const isRefreshing = ref(false)
 
 const fetchNews = async () => {
   loading.value = true
-  const apiKey = import.meta.env.VITE_NEWS_API_KEY 
-  const url = `https://newsapi.org/v2/top-headlines?category=technology&language=en&apiKey=${apiKey}`
-
+  
   try {
-    const response = await fetch(url)
-    const data = await response.json()
-    articles.value = data.articles.filter(a => a.title && a.url)
+    // 1. Fetch from Hacker News instead of NewsAPI
+    const topStoriesRes = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json')
+    const storyIds = await topStoriesRes.json()
+
+    // 2. Grab the top 20 story IDs
+    const firstBatchIds = storyIds.slice(0, 20)
+
+    // 3. Fetch the details for each of those 20 stories
+    const itemPromises = firstBatchIds.map(id => 
+      fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(res => res.json())
+    )
+
+    const items = await Promise.all(itemPromises)
+
+    // 4. Filter out any empty items or items without a URL
+    articles.value = items.filter(item => item !== null && item.url)
   } catch (error) {
-    console.error(error)
+    console.error("Failed to fetch HN data:", error)
   } finally {
     loading.value = false
     isRefreshing.value = false
@@ -26,11 +37,13 @@ const fetchNews = async () => {
 }
 
 const onTouchStart = (e) => {
-  if (feedContainer.value.scrollTop === 0) startY.value = e.touches[0].clientY
+  if (feedContainer.value && feedContainer.value.scrollTop === 0) {
+    startY.value = e.touches[0].clientY
+  }
 }
 
 const onTouchMove = (e) => {
-  if (feedContainer.value.scrollTop === 0 && startY.value > 0) {
+  if (feedContainer.value && feedContainer.value.scrollTop === 0 && startY.value > 0) {
     const currentY = e.touches[0].clientY
     if (currentY - startY.value > 80 && !isRefreshing.value) {
       isRefreshing.value = true
