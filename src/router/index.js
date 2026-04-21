@@ -1,26 +1,30 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import Login from '../views/Login.vue'
 import Feed from '../views/Feed.vue'
+import Welcome from '../views/Welcome.vue'
+import Vault from '../views/Vault.vue'
 
 const router = createRouter({
-  // This automatically uses the base path you set in vite.config.js
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', component: Feed, meta: { requiresAuth: true } },
-    { path: '/login', component: Login }
+    { path: '/', name: 'Feed', component: Feed },
+    { path: '/welcome', name: 'Welcome', component: Welcome },
+    { path: '/vault', name: 'Vault', component: Vault } // Add the route
   ]
 })
 
-// Updated Vue Router 4 syntax (no more next() callback)
+// The Personalization Guard
 router.beforeEach((to) => {
-  const auth = useAuthStore()
+  const hasName = localStorage.getItem('aram_user_name')
   
-  if (to.meta.requiresAuth && !auth.currentUser) {
-    // Redirect to login if they aren't authenticated
-    return '/login'
+  // If trying to access the feed without a name, send to welcome
+  if (to.path === '/' && !hasName) {
+    return '/welcome'
   }
-  // Otherwise, allow the navigation automatically
+  
+  // If trying to access the welcome screen but already named, send to feed
+  if (to.path === '/welcome' && hasName) {
+    return '/' 
+  }
 })
 
 export default router

@@ -1,6 +1,16 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import ArticleCard from '../components/ArticleCard.vue'
+import { computed } from 'vue'
+
+const userName = ref(localStorage.getItem('aram_user_name') || '')
+
+const timeBasedGreeting = computed(() => {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+})
 
 const articles = ref([])
 const loading = ref(true)
@@ -123,6 +133,12 @@ onMounted(() => { initFeed() })
     @touchend="onTouchEnd"
     @scroll="onScroll" 
   >
+    <div class="greeting-header">
+      <div class="greeting-text">
+        {{ timeBasedGreeting }}, <span class="highlight">{{ userName }}</span>.
+      </div>
+      <router-link to="/vault" class="vault-link">View Vault ★</router-link>
+    </div>
     <div v-if="isRefreshing" class="refresh-indicator">
       <span>↓ Fetching fresh stories...</span>
     </div>
@@ -189,4 +205,34 @@ onMounted(() => { initFeed() })
 }
 
 .feed-wrapper::-webkit-scrollbar { display: none; }
+
+.greeting-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 30px 20px;
+  z-index: 50;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.9) 30%, transparent);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vault-link {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 20px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: bold;
+  backdrop-filter: blur(5px);
+  pointer-events: auto; /* Important: allow clicking this while header is floating */
+}
+
+.highlight {
+  color: #fff;
+  font-weight: bold;
+}
 </style>

@@ -1,16 +1,38 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 
 const props = defineProps({
   article: Object
 })
 
-const domain = computed(() => {
-  try {
-    return new URL(props.article.url).hostname.replace('www.', '')
-  } catch {
-    return 'news.ycombinator.com'
+const isBookmarked = ref(false)
+
+// Check if this article is already saved when the card loads
+onMounted(() => {
+  const saved = JSON.parse(localStorage.getItem('aram_vault') || '[]')
+  if (saved.some(item => item.id === props.article.id)) {
+    isBookmarked.value = true
   }
+})
+
+const toggleBookmark = () => {
+  let saved = JSON.parse(localStorage.getItem('aram_vault') || '[]')
+  
+  if (isBookmarked.value) {
+    // Remove it
+    saved = saved.filter(item => item.id !== props.article.id)
+  } else {
+    // Add it (saving the whole article object so we don't have to re-fetch it later)
+    saved.push(props.article)
+  }
+  
+  localStorage.setItem('aram_vault', JSON.stringify(saved))
+  isBookmarked.value = !isBookmarked.value
+}
+
+const domain = computed(() => {
+  try { return new URL(props.article.url).hostname.replace('www.', '') } 
+  catch { return 'news.ycombinator.com' }
 })
 
 const dynamicBackground = computed(() => {
@@ -18,13 +40,9 @@ const dynamicBackground = computed(() => {
   return `linear-gradient(135deg, hsl(${hue}, 15%, 15%), hsl(${(hue + 40) % 360}, 20%, 8%))`
 })
 
-// Translate the Hacker News Unix timestamp into a clean "time ago" string
 const timeAgo = computed(() => {
   if (!props.article.time) return ''
-  
-  // Hacker News time is in seconds, Date.now() is in milliseconds
   const secondsPast = Math.floor((Date.now() / 1000) - props.article.time)
-  
   if (secondsPast < 60) return `${secondsPast}s ago`
   if (secondsPast < 3600) return `${Math.floor(secondsPast / 60)}m ago`
   if (secondsPast < 86400) return `${Math.floor(secondsPast / 3600)}h ago`
@@ -37,7 +55,6 @@ const timeAgo = computed(() => {
     <div class="content">
       <div class="meta-top">
         <span class="score">▲ {{ article.score }} points</span>
-        <span class="author">by {{ article.by }}</span>
         <span class="time">• {{ timeAgo }}</span>
       </div>
 
@@ -50,84 +67,47 @@ const timeAgo = computed(() => {
       
       <div class="actions">
         <a :href="article.url" target="_blank" class="read-btn">Read Article</a>
+        
+        <button 
+          @click="toggleBookmark" 
+          class="bookmark-btn" 
+          :class="{ 'is-saved': isBookmarked }"
+        >
+          {{ isBookmarked ? '★ Saved' : '☆ Save' }}
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.article-card {
-  height: 100dvh;
-  width: 100%;
-  scroll-snap-align: start;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 30px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
+/* ... Keep all your existing styles, just add these button styles at the bottom ... */
+.article-card { height: 100dvh; width: 100%; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 30px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.content { margin-bottom: 20px; }
+.meta-top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 15px; font-family: monospace; font-size: 0.9rem; color: #aaa; }
+.score { color: #ff6600; font-weight: bold; }
+.time { color: #666; }
+.title { font-size: 2rem; font-weight: 800; line-height: 1.2; margin: 0 0 20px 0; letter-spacing: -0.5px; }
+.domain-tag { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; color: #ccc; margin-bottom: 30px; }
+.actions { display: flex; justify-content: space-between; align-items: center; } /* Updated to space-between */
+.read-btn { background: #fff; color: #000; padding: 15px 30px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1rem; transition: transform 0.1s ease; }
+.read-btn:active { transform: scale(0.95); }
 
-.content {
-  margin-bottom: 20px;
-}
-
-.meta-top {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 15px;
-  font-family: monospace;
-  font-size: 0.9rem;
-  color: #aaa;
-}
-
-.score {
-  color: #ff6600; 
-  font-weight: bold;
-}
-
-.time {
-  color: #666;
-}
-
-.title {
-  font-size: 2rem;
-  font-weight: 800;
-  line-height: 1.2;
-  margin: 0 0 20px 0;
-  letter-spacing: -0.5px;
-}
-
-.domain-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255,255,255,0.1);
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  color: #ccc;
-  margin-bottom: 30px;
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-start;
-}
-
-.read-btn {
-  background: #fff;
-  color: #000;
-  padding: 15px 30px;
+/* Bookmark Button Styles */
+.bookmark-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 12px 20px;
   border-radius: 30px;
-  text-decoration: none;
+  font-size: 0.9rem;
   font-weight: bold;
-  font-size: 1rem;
-  transition: transform 0.1s ease;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
-
-.read-btn:active {
-  transform: scale(0.95);
+.bookmark-btn.is-saved {
+  background: #ff6600; /* Hacker News Orange */
+  border-color: #ff6600;
+  color: #fff;
 }
 </style>
