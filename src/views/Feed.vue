@@ -5,14 +5,16 @@ import ArticleCard from '../components/ArticleCard.vue'
 const articles = ref([])
 const loading = ref(true)
 const feedContainer = ref(null)
+
+// Touch & Scroll States
 const startY = ref(0)
-const isRefreshing = ref(false)
+const isRefreshing = ref(false) // Top loader
+const isLoadingMore = ref(false) // Bottom loader
 
-// --- THE ALGORITHM STATE ---
-const allStoryIds = ref([]) // Our "deck of cards"
-const seenIds = ref(new Set()) // The memory of what you've scrolled past
+// Algorithm Memory
+const allStoryIds = ref([])
+const seenIds = ref(new Set())
 
-// 1. The Randomizer (Fisher-Yates Shuffle)
 const shuffleArray = (array) => {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -21,19 +23,15 @@ const shuffleArray = (array) => {
   return array;
 }
 
-// 2. The Initial Bootup
 const initFeed = async () => {
   loading.value = true
   try {
-    // Grab all ~500 top stories
     const res = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json')
     const ids = await res.json()
-    
-    // Shuffle the entire deck so every session is unique
     allStoryIds.value = shuffleArray(ids) 
     
-    // Deal the first 10 cards
-    await loadMoreNews(10)
+    // Initial boot: fetch 10 items, append to bottom
+    await loadMoreNews(10, true)
   } catch (error) {
     console.error("Failed to init feed:", error)
   } finally {
@@ -41,20 +39,19 @@ const initFeed = async () => {
   }
 }
 
-// 3. The Engine
-const loadMoreNews = async (count) => {
+// The Upgraded Engine: The 'append' boolean tells it where to put the cards
+const loadMoreNews = async (count, append = true) => {
   const newIds = []
   
-  // Pluck unseen IDs from our shuffled deck
   while (newIds.length < count && allStoryIds.value.length > 0) {
     const id = allStoryIds.value.pop()
     if (!seenIds.value.has(id)) {
       newIds.push(id)
-      seenIds.value.add(id) // Mark as seen so we never show it again
+      seenIds.value.add(id)
     }
   }
 
-  if (newIds.length === 0) return // The deck is empty
+  if (newIds.length === 0) return 
 
   const itemPromises = newIds.map(id => 
     fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(res => res.json())
@@ -63,11 +60,33 @@ const loadMoreNews = async (count) => {
   const items = await Promise.all(itemPromises)
   const validItems = items.filter(item => item !== null && item.url)
 
-  // Inject the new items at the TOP of the feed
-  articles.value = [...validItems, ...articles.value]
+  if (append) {
+    // Infinite Scroll: Attach new cards to the BOTTOM
+    articles.value = [...articles.value, ...validItems]
+  } else {
+    // Pull-to-Refresh: Inject new cards at the TOP
+    articles.value = [...validItems, ...articles.value]
+  }
 }
 
-// --- TOUCH EVENTS ---
+// --- NEW: INFINITE SCROLL LOGIC ---
+const onScroll = async () => {
+  if (!feedContainer.value) return
+
+  const { scrollTop, scrollHeight, clientHeight } = feedContainer.value
+  
+  // If the user scrolls within 200px of the very bottom...
+  if (scrollTop + clientHeight >= scrollHeight - 200) {
+    // ...and we aren't already loading something...
+    if (!isLoadingMore.value && !loading.value) {
+      isLoadingMore.value = true
+      await loadMoreNews(5, true) // ...fetch 5 more and put them at the bottom!
+      isLoadingMore.value = false
+    }
+  }
+}
+
+// --- FIXED: PULL TO REFRESH LOGIC ---
 const onTouchStart = (e) => {
   if (feedContainer.value && feedContainer.value.scrollTop === 0) {
     startY.value = e.touches[0].clientY
@@ -78,13 +97,12 @@ const onTouchMove = async (e) => {
   if (feedContainer.value && feedContainer.value.scrollTop === 0 && startY.value > 0) {
     const currentY = e.touches[0].clientY
     
-    // If they pulled down far enough
     if (currentY - startY.value > 80 && !isRefreshing.value) {
       isRefreshing.value = true
-      startY.value = 0
+      startY.value = 0 
       
-      // Inject 5 brand new, unseen, random stories at the top
-      await loadMoreNews(5) 
+      // Fetch 5 fresh cards and put them at the TOP (append = false)
+      await loadMoreNews(5, false) 
       
       isRefreshing.value = false
     }
@@ -103,15 +121,23 @@ onMounted(() => { initFeed() })
     @touchstart="onTouchStart"
     @touchmove="onTouchMove"
     @touchend="onTouchEnd"
+    @scroll="onScroll" 
   >
-    <div v-if="isRefreshing" class="refresh-indicator">Fetching latest updates...</div>
+    <div v-if="isRefreshing" class="refresh-indicator">
+      <span>↓ Fetching fresh stories...</span>
+    </div>
+
     <div v-if="loading && !isRefreshing" class="loading-screen">Loading aram...</div>
     
     <ArticleCard 
-      v-for="(article, index) in articles" 
-      :key="index" 
+      v-for="article in articles" 
+      :key="article.id" 
       :article="article" 
     />
+
+    <div v-if="isLoadingMore" class="loading-more">
+      <span>Loading more...</span>
+    </div>
   </div>
 </template>
 
@@ -124,7 +150,8 @@ onMounted(() => { initFeed() })
   -webkit-overflow-scrolling: touch;
   position: relative;
 }
-.loading-screen, .refresh-indicator {
+
+.loading-screen {
   height: 100dvh;
   display: flex;
   align-items: center;
@@ -133,6 +160,33 @@ onMounted(() => { initFeed() })
   color: #888;
   scroll-snap-align: start;
 }
-.refresh-indicator { height: 60px; position: absolute; top: 0; width: 100%; z-index: 10; background: rgba(0,0,0,0.8); }
+
+/* Updated Pull-to-refresh styling */
+.refresh-indicator { 
+  height: 60px; 
+  position: sticky; 
+  top: 0; 
+  width: 100%; 
+  z-index: 10; 
+  background: rgba(0,0,0,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: monospace;
+}
+
+/* New Infinite Scroll loader styling */
+.loading-more {
+  height: 100dvh; /* Takes up a full swipe so it snaps perfectly */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  font-family: monospace;
+  scroll-snap-align: start;
+  background: #000;
+}
+
 .feed-wrapper::-webkit-scrollbar { display: none; }
 </style>
