@@ -1,3 +1,8 @@
+/**
+ * Vue Router configuration for aram app.
+ * Handles routing and navigation guards for personalization flow.
+ * @module router
+ */
 import { createRouter, createWebHistory } from 'vue-router'
 import Feed from '../views/Feed.vue'
 import Welcome from '../views/Welcome.vue'
@@ -8,20 +13,17 @@ const router = createRouter({
   routes: [
     { path: '/', name: 'Feed', component: Feed },
     { path: '/welcome', name: 'Welcome', component: Welcome },
-    { path: '/vault', name: 'Vault', component: Vault } // Add the route
+    { path: '/vault', name: 'Vault', component: Vault }
   ]
 })
 
-// The Personalization Guard
 router.beforeEach((to) => {
   const hasName = localStorage.getItem('aram_user_name')
   
-  // If trying to access the feed without a name, send to welcome
   if (to.path === '/' && !hasName) {
     return '/welcome'
   }
   
-  // If trying to access the welcome screen but already named, send to feed
   if (to.path === '/welcome' && hasName) {
     return '/' 
   }

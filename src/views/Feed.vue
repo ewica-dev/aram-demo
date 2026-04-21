@@ -5,6 +5,10 @@ import { computed } from 'vue'
 
 const userName = ref(localStorage.getItem('aram_user_name') || '')
 
+/**
+ * Computes greeting based on current hour.
+ * @returns {string} Time-based greeting (morning, afternoon, evening)
+ */
 const timeBasedGreeting = computed(() => {
   const hour = new Date().getHours()
   if (hour < 12) return 'Good morning'
@@ -18,8 +22,8 @@ const feedContainer = ref(null)
 
 // Touch & Scroll States
 const startY = ref(0)
-const isRefreshing = ref(false) // Top loader
-const isLoadingMore = ref(false) // Bottom loader
+const isRefreshing = ref(false)
+const isLoadingMore = ref(false)
 
 // Algorithm Memory
 const allStoryIds = ref([])
