@@ -100,7 +100,7 @@ const timeAgo = computed(() => {
 .time { color: #666; }
 .title { font-size: 2rem; font-weight: 800; line-height: 1.2; margin: 0 0 20px 0; letter-spacing: -0.5px; }
 .domain-tag { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; color: #ccc; margin-bottom: 30px; }
-.actions { display: flex; justify-content: space-between; align-items: center; } /* Updated to space-between */
+.actions { display: flex; gap: 12px; align-items: center; }
 .read-btn { background: #fff; color: #000; padding: 15px 30px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1rem; transition: transform 0.1s ease; }
 .read-btn:active { transform: scale(0.95); }
 
