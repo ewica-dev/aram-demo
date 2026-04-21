@@ -82,7 +82,18 @@ const timeAgo = computed(() => {
 
 <style scoped>
 /* ... Keep all your existing styles, just add these button styles at the bottom ... */
-.article-card { height: 100dvh; width: 100%; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 30px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.article-card {
+  height: 100dvh;
+  width: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always; /* <--- THIS IS THE MAGIC LINE */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 30px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  user-select: none; /* Prevents accidental text highlighting while swiping */
+}
 .content { margin-bottom: 20px; }
 .meta-top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 15px; font-family: monospace; font-size: 0.9rem; color: #aaa; }
 .score { color: #ff6600; font-weight: bold; }
