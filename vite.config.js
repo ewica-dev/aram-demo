@@ -16,5 +16,6 @@ export default defineConfig({
         icons: [] 
       }
     })
-  ]
+  ],
+  base: '/aram-demo/',
 })
