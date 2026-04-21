@@ -5,7 +5,6 @@ const props = defineProps({
   article: Object
 })
 
-// 1. Extract the clean domain name (e.g., "techcrunch.com")
 const domain = computed(() => {
   try {
     return new URL(props.article.url).hostname.replace('www.', '')
@@ -14,10 +13,22 @@ const domain = computed(() => {
   }
 })
 
-// 2. Generate a unique, dark gradient background based on the article's unique HN ID
 const dynamicBackground = computed(() => {
   const hue = (props.article.id || 0) % 360
   return `linear-gradient(135deg, hsl(${hue}, 15%, 15%), hsl(${(hue + 40) % 360}, 20%, 8%))`
+})
+
+// Translate the Hacker News Unix timestamp into a clean "time ago" string
+const timeAgo = computed(() => {
+  if (!props.article.time) return ''
+  
+  // Hacker News time is in seconds, Date.now() is in milliseconds
+  const secondsPast = Math.floor((Date.now() / 1000) - props.article.time)
+  
+  if (secondsPast < 60) return `${secondsPast}s ago`
+  if (secondsPast < 3600) return `${Math.floor(secondsPast / 60)}m ago`
+  if (secondsPast < 86400) return `${Math.floor(secondsPast / 3600)}h ago`
+  return `${Math.floor(secondsPast / 86400)}d ago`
 })
 </script>
 
@@ -27,6 +38,7 @@ const dynamicBackground = computed(() => {
       <div class="meta-top">
         <span class="score">▲ {{ article.score }} points</span>
         <span class="author">by {{ article.by }}</span>
+        <span class="time">• {{ timeAgo }}</span>
       </div>
 
       <h2 class="title">{{ article.title }}</h2>
@@ -50,7 +62,7 @@ const dynamicBackground = computed(() => {
   scroll-snap-align: start;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end; /* Push content to the bottom */
+  justify-content: flex-end;
   padding: 30px;
   border-bottom: 1px solid rgba(255,255,255,0.05);
 }
@@ -61,7 +73,9 @@ const dynamicBackground = computed(() => {
 
 .meta-top {
   display: flex;
-  gap: 15px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 15px;
   font-family: monospace;
   font-size: 0.9rem;
@@ -69,8 +83,12 @@ const dynamicBackground = computed(() => {
 }
 
 .score {
-  color: #ff6600; /* Hacker News Orange */
+  color: #ff6600; 
   font-weight: bold;
+}
+
+.time {
+  color: #666;
 }
 
 .title {
