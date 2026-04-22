@@ -19,10 +19,8 @@ const toggleBookmark = () => {
   let saved = JSON.parse(localStorage.getItem('aram_vault') || '[]')
   
   if (isBookmarked.value) {
-    // Remove it
     saved = saved.filter(item => item.id !== props.article.id)
   } else {
-    // Add it (saving the whole article object so we don't have to re-fetch it later)
     saved.push(props.article)
   }
   
@@ -34,6 +32,18 @@ const domain = computed(() => {
   try { return new URL(props.article.url).hostname.replace('www.', '') } 
   catch { return 'news.ycombinator.com' }
 })
+
+// --- NEW: Editorial Emblem Logic ---
+const publisherLogo = computed(() => {
+  // Uses the extracted domain to fetch a high-res favicon via Google's API
+  return `https://www.google.com/s2/favicons?domain=${domain.value}&sz=128`
+})
+
+// Failsafe: If a domain doesn't have a favicon, we hide the broken image icon
+const handleImageError = (e) => {
+  e.target.style.display = 'none'
+}
+// -----------------------------------
 
 const dynamicBackground = computed(() => {
   const hue = (props.article.id || 0) % 360
@@ -56,6 +66,15 @@ const timeAgo = computed(() => {
       <div class="meta-top">
         <span class="score">▲ {{ article.score }} points</span>
         <span class="time">• {{ timeAgo }}</span>
+      </div>
+
+      <div class="emblem-container">
+        <img 
+          :src="publisherLogo" 
+          alt="Publisher Logo" 
+          class="publisher-emblem"
+          @error="handleImageError"
+        />
       </div>
 
       <h2 class="title">{{ article.title }}</h2>
@@ -81,21 +100,52 @@ const timeAgo = computed(() => {
 </template>
 
 <style scoped>
-/* ... Keep all your existing styles, just add these button styles at the bottom ... */
 .article-card {
   height: 100dvh;
   width: 100%;
   scroll-snap-align: start;
-  scroll-snap-stop: always; /* <--- THIS IS THE MAGIC LINE */
+  scroll-snap-stop: always; 
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   padding: 30px;
   border-bottom: 1px solid rgba(255,255,255,0.05);
-  user-select: none; /* Prevents accidental text highlighting while swiping */
+  user-select: none; 
 }
+
 .content { margin-bottom: 20px; }
-.meta-top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 15px; font-family: monospace; font-size: 0.9rem; color: #aaa; }
+
+.meta-top { 
+  display: flex; 
+  flex-wrap: wrap; 
+  align-items: center; 
+  gap: 12px; 
+  margin-bottom: 20px; /* Increased slightly to give the emblem room */
+  font-family: monospace; 
+  font-size: 0.9rem; 
+  color: #aaa; 
+}
+
+/* --- NEW: Emblem Styles --- */
+.emblem-container {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.publisher-emblem {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08); /* Dark frosted glass */
+  padding: 10px;
+  object-fit: contain;
+  /* Applies the subtle cyan glow we established for the brand */
+  box-shadow: 0 4px 20px rgba(0, 245, 212, 0.15); 
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+/* -------------------------- */
+
 .score { color: #ff6600; font-weight: bold; }
 .time { color: #666; }
 .title { font-size: 2rem; font-weight: 800; line-height: 1.2; margin: 0 0 20px 0; letter-spacing: -0.5px; }
@@ -117,7 +167,7 @@ const timeAgo = computed(() => {
   transition: all 0.2s ease;
 }
 .bookmark-btn.is-saved {
-  background: #ff6600; /* Hacker News Orange */
+  background: #ff6600; 
   border-color: #ff6600;
   color: #fff;
 }
