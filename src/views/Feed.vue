@@ -98,7 +98,10 @@ const onScroll = async () => {
     // ...and we aren't already loading something...
     if (!isLoadingMore.value && !loading.value) {
       isLoadingMore.value = true
-      await loadMoreNews(5, true) // ...fetch 5 more and put them at the bottom!
+      
+      // CHANGE HERE: Pass false (or omit it) so it appends instead of wiping
+      await loadMoreNews(5, false) 
+      
       isLoadingMore.value = false
     }
   }
