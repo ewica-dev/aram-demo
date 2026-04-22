@@ -44,8 +44,8 @@ const initFeed = async () => {
     const ids = await res.json()
     allStoryIds.value = shuffleArray(ids) 
     
-    // Initial boot: fetch 10 items, append to bottom
-    await loadMoreNews(10, true)
+    // Initial boot: fetch 10 items, attach to bottom (isRefresh = false)
+    await loadMoreNews(10)
   } catch (error) {
     console.error("Failed to init feed:", error)
   } finally {
@@ -53,8 +53,8 @@ const initFeed = async () => {
   }
 }
 
-// The Upgraded Engine: The 'append' boolean tells it where to put the cards
-const loadMoreNews = async (count, append = true) => {
+// The Upgraded Engine: The 'isRefresh' boolean tells it to wipe the feed
+const loadMoreNews = async (count, isRefresh = false) => {
   const newIds = []
   
   while (newIds.length < count && allStoryIds.value.length > 0) {
@@ -74,12 +74,16 @@ const loadMoreNews = async (count, append = true) => {
   const items = await Promise.all(itemPromises)
   const validItems = items.filter(item => item !== null && item.url)
 
-  if (append) {
-    // Infinite Scroll: Attach new cards to the BOTTOM
-    articles.value = [...articles.value, ...validItems]
+  if (isRefresh) {
+    // PULL TO REFRESH: Replace the entire feed with the new batch
+    articles.value = validItems
+    // Force the container back to the absolute top to reset the scroll position
+    if (feedContainer.value) {
+      feedContainer.value.scrollTop = 0
+    }
   } else {
-    // Pull-to-Refresh: Inject new cards at the TOP
-    articles.value = [...validItems, ...articles.value]
+    // INFINITE SCROLL / BOOTUP: Attach new cards to the BOTTOM
+    articles.value = [...articles.value, ...validItems]
   }
 }
 
@@ -115,8 +119,8 @@ const onTouchMove = async (e) => {
       isRefreshing.value = true
       startY.value = 0 
       
-      // Fetch 5 fresh cards and put them at the TOP (append = false)
-      await loadMoreNews(5, false) 
+      // Fetch a brand new hand of 10 and WIPE the current feed (isRefresh = true)
+      await loadMoreNews(10, true) 
       
       isRefreshing.value = false
     }
