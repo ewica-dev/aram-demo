@@ -18,11 +18,11 @@ onMounted(() => {
   <div class="vault-wrapper">
     <div class="vault-header">
       <router-link to="/" class="back-btn">← Back to Feed</router-link>
-      <h1>Your Vault</h1>
+      <h1>Bookmarks</h1>
     </div>
 
     <div v-if="savedArticles.length === 0" class="empty-state">
-      <p>Your vault is empty.</p>
+      <p>Your bookmarks is empty.</p>
       <span>Save articles in the feed to see them here.</span>
     </div>
 
