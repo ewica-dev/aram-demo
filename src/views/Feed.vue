@@ -104,7 +104,6 @@ const onScroll = async () => {
   }
 }
 
-// --- FIXED: PULL TO REFRESH LOGIC ---
 const onTouchStart = (e) => {
   if (feedContainer.value && feedContainer.value.scrollTop === 0) {
     startY.value = e.touches[0].clientY

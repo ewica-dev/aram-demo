@@ -43,11 +43,9 @@ const enterApp = () => {
           
           <h2>The Philosophy</h2>
           
-          <p>I built this because I’m tired of doomscrolling nonsense, but often too exhausted for "real" work. I’m self-aware enough to know I’m wasting time, but too lazy to hunt for heavy reading materials.</p>
+          <p>I built this as a healthier substitute for social media doomscrolling. aram. lets you lie down, scroll endlessly, and still feel productive — because you're consuming content that's actually relevant to you.</p>
           
-          <p><strong>aram.</strong> fixes this. It’s for the horizontal developer. Stay rested, but keep learning.</p>
-          
-          <p>High-signal tech. No noise. No creators. Just knowledge for your thumbs.</p>
+          <p>High-signal tech news and articles. No noise. No feeds designed to trap you. Just knowledge for your thumbs.</p>
           
           <button @click="showManifesto = false" class="close-btn">Got it</button>
         </div>
