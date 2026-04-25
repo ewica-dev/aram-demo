@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import ArticleCard from '../ArticleCard.vue'
 import { useArticlesStore } from '../../stores/articles'
+// Import styles to get the actual class names with CSS modules
+import styles from '@/assets/css/articleCard.module.css'
 
 describe('ArticleCard', () => {
   const mockArticle = {
@@ -23,21 +25,21 @@ describe('ArticleCard', () => {
     const wrapper = mount(ArticleCard, {
       props: { article: mockArticle }
     })
-    expect(wrapper.find('.title').text()).toBe('Test Article Title')
+    expect(wrapper.find(`.${styles.title}`).text()).toBe('Test Article Title')
   })
 
   it('renders article score', () => {
     const wrapper = mount(ArticleCard, {
       props: { article: mockArticle }
     })
-    expect(wrapper.find('.score').text()).toContain('100')
+    expect(wrapper.find(`.${styles.score}`).text()).toContain('100')
   })
 
   it('renders domain from article URL', () => {
     const wrapper = mount(ArticleCard, {
       props: { article: mockArticle }
     })
-    expect(wrapper.find('.domain-tag').text()).toContain('example.com')
+    expect(wrapper.find(`.${styles['domain-tag']}`).text()).toContain('example.com')
   })
 
   it('displays fallback domain for invalid URL', () => {
@@ -45,7 +47,7 @@ describe('ArticleCard', () => {
     const wrapper = mount(ArticleCard, {
       props: { article }
     })
-    expect(wrapper.find('.domain-tag').text()).toContain('news.ycombinator.com')
+    expect(wrapper.find(`.${styles['domain-tag']}`).text()).toContain('news.ycombinator.com')
   })
 
   it('formats time ago correctly for seconds', () => {
@@ -53,7 +55,7 @@ describe('ArticleCard', () => {
     const wrapper = mount(ArticleCard, {
       props: { article }
     })
-    expect(wrapper.find('.time').text()).toContain('s ago')
+    expect(wrapper.find(`.${styles.time}`).text()).toContain('s ago')
   })
 
   it('formats time ago correctly for minutes', () => {
@@ -61,7 +63,7 @@ describe('ArticleCard', () => {
     const wrapper = mount(ArticleCard, {
       props: { article }
     })
-    expect(wrapper.find('.time').text()).toContain('m ago')
+    expect(wrapper.find(`.${styles.time}`).text()).toContain('m ago')
   })
 
   it('formats time ago correctly for hours', () => {
@@ -69,7 +71,7 @@ describe('ArticleCard', () => {
     const wrapper = mount(ArticleCard, {
       props: { article }
     })
-    expect(wrapper.find('.time').text()).toContain('h ago')
+    expect(wrapper.find(`.${styles.time}`).text()).toContain('h ago')
   })
 
   it('formats time ago correctly for days', () => {
@@ -77,7 +79,7 @@ describe('ArticleCard', () => {
     const wrapper = mount(ArticleCard, {
       props: { article }
     })
-    expect(wrapper.find('.time').text()).toContain('d ago')
+    expect(wrapper.find(`.${styles.time}`).text()).toContain('d ago')
   })
 
   it('toggles bookmark on button click', async () => {
@@ -88,9 +90,9 @@ describe('ArticleCard', () => {
 
     expect(store.vault).toHaveLength(0)
 
-    const button = wrapper.find('.bookmark-btn')
+    const button = wrapper.find(`.${styles['bookmark-btn']}`)
     expect(button.text()).toBe('☆ Save')
-    expect(button.classes()).not.toContain('is-saved')
+    expect(button.classes()).not.toContain(styles['is-saved'])
 
     await button.trigger('click')
     await wrapper.vm.$nextTick()
@@ -101,7 +103,7 @@ describe('ArticleCard', () => {
     expect(store.vault).toHaveLength(1)
     expect(store.vault[0].id).toBe(1)
     expect(button.text()).toBe('★ Saved')
-    expect(button.classes()).toContain('is-saved')
+    expect(button.classes()).toContain(styles['is-saved'])
   })
 
   it('removes bookmark when already saved', async () => {
@@ -115,9 +117,9 @@ describe('ArticleCard', () => {
 
     await wrapper.vm.$nextTick()
 
-    const button = wrapper.find('.bookmark-btn')
+    const button = wrapper.find(`.${styles['bookmark-btn']}`)
     expect(button.text()).toBe('★ Saved')
-    expect(button.classes()).toContain('is-saved')
+    expect(button.classes()).toContain(styles['is-saved'])
 
     await button.trigger('click')
     await wrapper.vm.$nextTick()
@@ -126,7 +128,7 @@ describe('ArticleCard', () => {
 
     expect(store.vault).toHaveLength(0)
     expect(button.text()).toBe('☆ Save')
-    expect(button.classes()).not.toContain('is-saved')
+    expect(button.classes()).not.toContain(styles['is-saved'])
   })
 
   it('sets isBookmarked from store on mount', async () => {
@@ -140,9 +142,9 @@ describe('ArticleCard', () => {
 
     await wrapper.vm.$nextTick()
 
-    const button = wrapper.find('.bookmark-btn')
+    const button = wrapper.find(`.${styles['bookmark-btn']}`)
     expect(button.text()).toBe('★ Saved')
-    expect(button.classes()).toContain('is-saved')
+    expect(button.classes()).toContain(styles['is-saved'])
   })
 
   it('generates dynamic background style', () => {
@@ -150,7 +152,7 @@ describe('ArticleCard', () => {
       props: { article: mockArticle }
     })
 
-    const style = wrapper.find('.article-card').attributes('style')
+    const style = wrapper.find(`.${styles['article-card']}`).attributes('style')
     expect(style).toContain('linear-gradient')
   })
 
@@ -159,7 +161,7 @@ describe('ArticleCard', () => {
       props: { article: mockArticle }
     })
 
-    const img = wrapper.find('.publisher-emblem')
+    const img = wrapper.find(`.${styles['publisher-emblem']}`)
     await img.trigger('error')
 
     // Should not throw
@@ -171,7 +173,7 @@ describe('ArticleCard', () => {
       props: { article: mockArticle }
     })
 
-    const link = wrapper.find('.read-btn')
+    const link = wrapper.find(`.${styles['read-btn']}`)
     expect(link.attributes('href')).toBe('https://example.com/article')
     expect(link.attributes('target')).toBe('_blank')
     expect(link.text()).toBe('Read Article')

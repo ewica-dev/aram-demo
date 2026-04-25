@@ -3,21 +3,10 @@ import { ref, onMounted } from 'vue'
 import ArticleCard from '../components/ArticleCard.vue'
 import { computed } from 'vue'
 import { useUserStore } from '../stores/user'
+import { useGreeting } from '@/composables/useGreeting'
 import hackerNews from '../services/hackerNews'
 
-const userStore = useUserStore()
-const userName = computed(() => userStore.name)
-
-/**
- * Computes greeting based on current hour.
- * @returns {string} Time-based greeting (morning, afternoon, evening)
- */
-const timeBasedGreeting = computed(() => {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
-})
+const { timeBasedGreeting, userName } = useGreeting()
 
 const articles = ref([])
 const loading = ref(true)
