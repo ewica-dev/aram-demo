@@ -7,6 +7,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Feed from '../views/Feed.vue'
 import Welcome from '../views/Welcome.vue'
 import Vault from '../views/Vault.vue'
+import { useUserStore } from '../stores/user'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -18,7 +19,8 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  const hasName = localStorage.getItem('aram_user_name')
+  const userStore = useUserStore()
+  const hasName = userStore.name
   
   if (to.path === '/' && !hasName) {
     return '/welcome'

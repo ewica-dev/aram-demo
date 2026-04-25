@@ -2,8 +2,11 @@
 import { ref, onMounted } from 'vue'
 import ArticleCard from '../components/ArticleCard.vue'
 import { computed } from 'vue'
+import { useUserStore } from '../stores/user'
+import hackerNews from '../services/hackerNews'
 
-const userName = ref(localStorage.getItem('aram_user_name') || '')
+const userStore = useUserStore()
+const userName = computed(() => userStore.name)
 
 /**
  * Computes greeting based on current hour.
@@ -18,6 +21,7 @@ const timeBasedGreeting = computed(() => {
 
 const articles = ref([])
 const loading = ref(true)
+const error = ref(null)
 const feedContainer = ref(null)
 
 // Touch & Scroll States
@@ -38,54 +42,67 @@ const shuffleArray = (array) => {
 }
 
 const initFeed = async () => {
-  loading.value = true
-  try {
-    const res = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json')
-    const ids = await res.json()
-    allStoryIds.value = shuffleArray(ids) 
-    
-    // Initial boot: fetch 10 items, attach to bottom (isRefresh = false)
-    await loadMoreNews(10)
-  } catch (error) {
-    console.error("Failed to init feed:", error)
-  } finally {
-    loading.value = false
+    loading.value = true
+    error.value = null
+    try {
+      const ids = await hackerNews.getTopStories()
+      allStoryIds.value = shuffleArray(ids) 
+      
+      // Initial boot: fetch 10 items, attach to bottom (isRefresh = false)
+      await loadMoreNews(10)
+    } catch (err) {
+      console.error("Failed to init feed:", err)
+      error.value = err.message || 'Failed to load feed'
+    } finally {
+      loading.value = false
+    }
   }
-}
 
 // The Upgraded Engine: The 'isRefresh' boolean tells it to wipe the feed
 const loadMoreNews = async (count, isRefresh = false) => {
-  const newIds = []
-  
-  while (newIds.length < count && allStoryIds.value.length > 0) {
-    const id = allStoryIds.value.pop()
-    if (!seenIds.value.has(id)) {
-      newIds.push(id)
-      seenIds.value.add(id)
+    if (isRefresh) {
+      error.value = null
+    }
+    
+    const newIds = []
+    
+    while (newIds.length < count && allStoryIds.value.length > 0) {
+      const id = allStoryIds.value.pop()
+      if (!seenIds.value.has(id)) {
+        newIds.push(id)
+        seenIds.value.add(id)
+      }
+    }
+
+    if (newIds.length === 0) return 
+
+    const itemPromises = newIds.map(id => 
+      hackerNews.getItem(id)
+    )
+    
+    try {
+      const items = await Promise.all(itemPromises)
+      const validItems = items.filter(item => item !== null && item.url)
+
+      if (isRefresh) {
+        // PULL TO REFRESH: Replace the entire feed with the new batch
+        articles.value = validItems
+        // Force the container back to the absolute top to reset the scroll position
+        if (feedContainer.value) {
+          feedContainer.value.scrollTop = 0
+        }
+      } else {
+        // INFINITE SCROLL / BOOTUP: Attach new cards to the BOTTOM
+        articles.value = [...articles.value, ...validItems]
+      }
+    } catch (err) {
+      console.error("Failed to load more news:", err)
+      if (isRefresh) {
+        error.value = err.message || 'Failed to refresh feed'
+      }
+      throw err
     }
   }
-
-  if (newIds.length === 0) return 
-
-  const itemPromises = newIds.map(id => 
-    fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(res => res.json())
-  )
-  
-  const items = await Promise.all(itemPromises)
-  const validItems = items.filter(item => item !== null && item.url)
-
-  if (isRefresh) {
-    // PULL TO REFRESH: Replace the entire feed with the new batch
-    articles.value = validItems
-    // Force the container back to the absolute top to reset the scroll position
-    if (feedContainer.value) {
-      feedContainer.value.scrollTop = 0
-    }
-  } else {
-    // INFINITE SCROLL / BOOTUP: Attach new cards to the BOTTOM
-    articles.value = [...articles.value, ...validItems]
-  }
-}
 
 // --- NEW: INFINITE SCROLL LOGIC ---
 const onScroll = async () => {
@@ -154,13 +171,17 @@ onMounted(() => { initFeed() })
     </div>
 
     <div v-if="loading && !isRefreshing" class="loading-screen">Loading aram...</div>
+    <div v-else-if="!loading && error" class="error-screen">
+      <span>{{ error }}</span>
+    </div>
     
     <ArticleCard 
       v-for="article in articles" 
       :key="article.id" 
       :article="article" 
+      v-if="!loading && !error"
     />
-
+    
     <div v-if="isLoadingMore" class="loading-more">
       <span>Loading more...</span>
     </div>

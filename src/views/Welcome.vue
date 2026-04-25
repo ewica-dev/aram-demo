@@ -1,14 +1,16 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '../stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 const name = ref('')
 const showManifesto = ref(false)
 
 const enterApp = () => {
   if (name.value.trim()) {
-    localStorage.setItem('aram_user_name', name.value.trim())
+    userStore.setName(name.value.trim())
     router.push('/')
   }
 }

@@ -1,17 +1,10 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed } from 'vue'
 import ArticleCard from '../components/ArticleCard.vue'
+import { useArticlesStore } from '../stores/articles'
 
-const savedArticles = ref([])
-
-const loadVault = () => {
-  const data = localStorage.getItem('aram_vault')
-  savedArticles.value = data ? JSON.parse(data) : []
-}
-
-onMounted(() => {
-  loadVault()
-})
+const articlesStore = useArticlesStore()
+const savedArticles = computed(() => articlesStore.vault)
 </script>
 
 <template>

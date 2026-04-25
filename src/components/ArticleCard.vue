@@ -1,31 +1,21 @@
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed } from 'vue'
+import { useArticlesStore } from '../stores/articles'
 
 const props = defineProps({
   article: Object
 })
 
-const isBookmarked = ref(false)
+const articlesStore = useArticlesStore()
 
-// Check if this article is already saved when the card loads
-onMounted(() => {
-  const saved = JSON.parse(localStorage.getItem('aram_vault') || '[]')
-  if (saved.some(item => item.id === props.article.id)) {
-    isBookmarked.value = true
-  }
-})
+const isBookmarked = computed(() => articlesStore.isArticleSaved(props.article.id))
 
 const toggleBookmark = () => {
-  let saved = JSON.parse(localStorage.getItem('aram_vault') || '[]')
-  
   if (isBookmarked.value) {
-    saved = saved.filter(item => item.id !== props.article.id)
+    articlesStore.removeArticle(props.article.id)
   } else {
-    saved.push(props.article)
+    articlesStore.addArticle(props.article)
   }
-  
-  localStorage.setItem('aram_vault', JSON.stringify(saved))
-  isBookmarked.value = !isBookmarked.value
 }
 
 const domain = computed(() => {
